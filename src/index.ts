@@ -55,61 +55,6 @@ const api2 = axios.create({
 });
 
 
-/**
- * Interfaces
- */
-interface User {
-  self: string;
-  key: string;
-  accountId: string;
-  accountType: string;
-  name: string;
-  emailAddress: string;
-  avatarUrls: Record<string, string>;
-  displayName: string;
-  active: boolean;
-  timeZone: string;
-  locale: string;
-}
-
-interface IssueStatus {
-  description: string;
-  iconUrl: string;
-  name: string;
-  id: string;
-  statusCategory: {
-    self: string;
-    id: number;
-    key: string;
-    colorName: string;
-    name: string;
-  };
-}
-
-interface Issue {
-  expand: string;
-  id: string;
-  self: string;
-  key: string;
-  fields: {
-    summary: string;
-    assignee?: User;
-    status: IssueStatus;
-  };
-}
-
-interface Sprint {
-  id: number;
-  self: string;
-  state: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  originBoardId: number;
-  goal: string;
-}
-
-
 /********************************************************************************************************
  * REST API wrapper
  ********************************************************************************************************/
