@@ -2,5 +2,10 @@
   "name": "jira-cli",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon --execMap tsc src/index.ts --watch src",
+    "build": "NODE_ENV=production webpack",
+    "clean": "rm -rf dist"
+  },
 }
