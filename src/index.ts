@@ -25,6 +25,7 @@ const SPRINT_BOARD_ID = "16";
 const users = <const>["alan", "jackie", "jake", "joseph", "jun", "karl", "sean", "      "];
 const USER_PAD = Math.max(...users.map(x => x.length));
 const status = <const>["todo", "doing", "wait", "review", "done"];
+const statusId = <const>[11, 21, 51, 41, 31];
 const STATUS_PAD = 6;
 const statusMap = <const>{
   "To Do": "todo",
@@ -189,6 +190,21 @@ const printer = {
     const name = assignee ? assignee.name : "      ";
     console.log(key, printer.name(name), printer.status((statusMap as any)[statusKey]), `${chalk.gray(summary)} -> ${newSummary}`);
   },
+  updateIssueStatus: (issue: Issue, newStatus: any) => {
+    const {
+      key,
+      fields: {
+        summary,
+        assignee,
+        status: {
+          name: statusKey,
+        },
+      }
+    } = issue;
+
+    const name = assignee ? assignee.name : "      ";
+    console.log(key, printer.name(name), printer.status((statusMap as any)[statusKey]), "->", printer.status(newStatus), summary);
+  },
   status: (s: typeof status[number]) => {
     const color = {
       "todo": "green",
@@ -272,18 +288,34 @@ const list = async (...args: any) => {
 };
 
 const change = (to: typeof status[number]) => async (...args: any) => {
-  const issueId = args[0];
-  if (!/^\d+$/.test(issueId)) {
+  const id = args[0];
+  if (!/^\d+$/.test(id)) {
     console.error(`
 Usage: jira ${to} <issue-id>, where issue id must be number
 
-given: '${chalk.yellow(issueId)}'
+given: '${chalk.yellow(id)}'
 `);
 
     process.exit(0);
   }
+  try {
+    const res = await api.get(`/issue/SB-${id}`);
+    const issue = res.data;
 
-  console.log(issueId);
+    await api.post(`/issue/SB-${id}/transitions`, {
+      transition: {
+        id: String(statusId[status.indexOf(to)]),
+      }
+    });
+    printer.updateIssueStatus(issue, to);
+  } catch (e) {
+    if (R.path(["response", "status"], e)) {
+      const { response: res } = e;
+      console.error(res.status, R.path(["data", "errorMessages", "0"], res));
+    } else {
+      console.error(e);
+    }
+  }
 };
 
 program
@@ -293,9 +325,34 @@ program
   .action(list);
 
 program
+  .command("add")
+  .description("Add a issue into current sprint")
+  .action(add);
+
+program
   .command("done [issue]")
   .description("Set status of the issue 'done'")
   .action(change("done"));
+
+program
+  .command("wait [issue]")
+  .description("Set status of the issue 'wait'")
+  .action(change("wait"));
+
+program
+  .command("doing [issue]")
+  .description("Set status of the issue 'doing'")
+  .action(change("doing"));
+
+program
+  .command("review [issue]")
+  .description("Set status of the issue 'review'")
+  .action(change("review"));
+
+program
+  .command("todo [issue]")
+  .description("Set status of the issue 'todo'")
+  .action(change("todo"));
 
 program
   .arguments("<id> [summary]")
