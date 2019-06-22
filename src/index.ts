@@ -207,7 +207,7 @@ const printer = {
 const updateIssueSummary = async (args: any) => {
   const options = args.filter((x: any) => typeof x === "string");
   if (options.length <= 1) {
-    console.error("need more argument. see --help");
+    console.error("Need more argument. see --help");
     process.exit(0);
   }
 
@@ -319,7 +319,7 @@ program.on("--help", function() {
   console.log("  $ jira ls joseph todo");
   console.log("  $ jira ls karl review done");
   console.log("  $ jira ls jospeh karl doing review");
-  console.log(`  $ jira 2352 "(1.5h) ..."`);
+  console.log(`  $ jira 2356 "(1.5h) ..."`);
   console.log("\n");
 });
 
