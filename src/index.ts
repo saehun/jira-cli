@@ -55,6 +55,9 @@ const api2 = axios.create({
 });
 
 
+/**
+ * Interfaces
+ */
 interface User {
   self: string;
   key: string;
@@ -107,6 +110,9 @@ interface Sprint {
 }
 
 
+/********************************************************************************************************
+ * REST API wrapper
+ ********************************************************************************************************/
 const getAllSprint = async () => {
   const res = await api2.get(`board/${SPRINT_BOARD_ID}/sprint`);
   return res.data.values;
@@ -124,7 +130,6 @@ const getSprint = async (offset = 0) => {
   ) as Sprint;
 };
 
-// jql=project=anerds%20and%20resolution=Duplicate
 const getIssueBySprint = async (offset = 0, ...args: (typeof users[number] | typeof status[number])[]): Promise<Issue[]> => {
   const sprint = await getSprint(offset);
 
@@ -165,6 +170,53 @@ const getIssue = async (id: any) => {
   return res.data;
 };
 
+
+const updateIssueSummary = async (args: any) => {
+  const options = args.filter((x: any) => typeof x === "string");
+  if (options.length <= 1) {
+    console.error("Need more argument. see --help");
+    process.exit(0);
+  }
+
+  const [id, ...summaries] = options;
+  const summary = summaries.join(" ");
+
+  if (!/^\d+$/.test(id)) {
+    console.error(`
+Usage: jira [issue-id] [summary], where issue id must be number
+
+given: '${chalk.yellow(id)}'
+`);
+    process.exit(0);
+  }
+
+  try {
+    const res = await api.get(`/issue/SB-${id}`);
+    const issue = res.data;
+    await api.put(`/issue/SB-${id}`, {
+      fields: {
+        summary,
+      }
+    });
+    printer.updateIssueSummary(issue, summary);
+    process.exit(0);
+  } catch (e) {
+    if (R.path(["response", "status"], e)) {
+      const { response: res } = e;
+      console.error(res.status, R.path(["data", "errorMessages", "0"], res));
+    } else {
+      console.error(e);
+    }
+  }
+};
+/********************************************************************************************************
+ * REST API wrapper end
+ */
+
+
+/**
+ * Pretty printer
+ */
 const printer = {
   issue: (issue: Issue) => {
     const {
@@ -226,45 +278,12 @@ const printer = {
   },
 };
 
-const updateIssueSummary = async (args: any) => {
-  const options = args.filter((x: any) => typeof x === "string");
-  if (options.length <= 1) {
-    console.error("Need more argument. see --help");
-    process.exit(0);
-  }
 
-  const [id, ...summaries] = options;
-  const summary = summaries.join(" ");
 
-  if (!/^\d+$/.test(id)) {
-    console.error(`
-Usage: jira [issue-id] [summary], where issue id must be number
 
-given: '${chalk.yellow(id)}'
-`);
-    process.exit(0);
-  }
-
-  try {
-    const res = await api.get(`/issue/SB-${id}`);
-    const issue = res.data;
-    await api.put(`/issue/SB-${id}`, {
-      fields: {
-        summary,
-      }
-    });
-    printer.updateIssueSummary(issue, summary);
-    process.exit(0);
-  } catch (e) {
-    if (R.path(["response", "status"], e)) {
-      const { response: res } = e;
-      console.error(res.status, R.path(["data", "errorMessages", "0"], res));
-    } else {
-      console.error(e);
-    }
-  }
-};
-
+/**
+ * jira ls 커맨드
+ */
 const list = async (...args: any) => {
   const options = args.splice(0, args.length - 1);
 
@@ -293,6 +312,9 @@ const list = async (...args: any) => {
   }
 };
 
+/**
+ * jira <issue-id> summary 커맨드
+ */
 const change = (to: typeof status[number]) => async (...args: any) => {
   const id = args[0];
   if (!/^\d+$/.test(id)) {
@@ -324,6 +346,9 @@ given: '${chalk.yellow(id)}'
   }
 };
 
+/**
+ * jira add [user] summary 커맨드
+ */
 const add = async (user: any, ...rest: any) => {
   if (!users.includes(user)) {
     console.log(`First argument must be one of the users: ${users.join(", ")}`);
@@ -382,6 +407,9 @@ const add = async (user: any, ...rest: any) => {
   }
 };
 
+/**
+ * jira rm <issue-id> 커맨드
+ */
 const remove = async (id: any) => {
   if (!/^\d+$/.test(id)) {
     console.error(`
@@ -411,6 +439,10 @@ given: '${chalk.yellow(id)}'
   }
 };
 
+
+/**
+ * CLI entry
+ */
 program
   .version("0.1.0", "-v, --version")
   .command("ls")
