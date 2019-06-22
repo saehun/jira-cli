@@ -2,6 +2,7 @@ import axios from "axios";
 import * as R from "ramda";
 import * as date from "date-fns";
 import * as program from "commander";
+import * as inquirer from "inquirer";
 const chalk = require("chalk");
 
 console.log("JIRA cli -- v1.0.0");
@@ -157,6 +158,11 @@ const getIssues = async () => {
     ]
   });
   return res.data.issues;
+};
+
+const getIssue = async (id: any) => {
+  const res = await api.get(`issue/SB-${id}`);
+  return res.data;
 };
 
 const printer = {
@@ -376,7 +382,34 @@ const add = async (user: any, ...rest: any) => {
   }
 };
 
+const remove = async (id: any) => {
+  if (!/^\d+$/.test(id)) {
+    console.error(`
+Usage: jira rm <issue-id>, where issue id must be number
 
+given: '${chalk.yellow(id)}'
+`);
+  }
+  try {
+    const issue = await getIssue(id);
+
+    printer.issue(issue);
+    inquirer.prompt({
+      type: "confirm",
+      message: `Delete SB-${id}`,
+      name: "yes"
+    }).then(async ({ yes }: any) => {
+      if (yes) {
+        await api.delete(`issue/SB-${id}`);
+      } else {
+        console.log("Bye..");
+      }
+    });
+
+  } catch (e) {
+    console.log(e);
+  }
+};
 
 program
   .version("0.1.0", "-v, --version")

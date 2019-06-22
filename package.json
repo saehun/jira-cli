@@ -10,6 +10,7 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
+    "@types/inquirer": "^6.0.3",
     "@types/node": "^12.0.10",
     "@types/ramda": "^0.26.9",
     "nodemon": "^1.19.1",
