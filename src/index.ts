@@ -318,6 +318,66 @@ given: '${chalk.yellow(id)}'
   }
 };
 
+const add = async (user: any, ...rest: any) => {
+  if (!users.includes(user)) {
+    console.log(`First argument must be one of the users: ${users.join(", ")}`);
+    console.log(`- given ${chalk.yellow(user)}`);
+    process.exit(0);
+  }
+  const options = rest.filter((x: any) => typeof x === "string");
+  if (options.length < 1) {
+    console.error("You must specify summary of a issue");
+    process.exit(0);
+  }
+  const summary = options.join(" ");
+
+  try {
+    const res = await api.post("issue", {
+      fields: {
+        project: {
+          id: "10016" // TODO, refactor to config
+        },
+        summary,
+        issuetype: {
+          id: "10021" // TODO, refactor to config
+        },
+        assignee: {
+          name: user,
+        },
+        reporter: {
+          name: "karl" // TODO, config
+        }
+      }
+    });
+    console.log("Issue is successfully created");
+    const key = R.path(["data", "key"], res);
+    if (key) {
+      const sprint = await getSprint();
+      console.log("Set the issue's sprint..", sprint.id);
+      await api2.post(`sprint/${sprint.id}/issue`, {
+        issues: [key],
+      });
+
+      printer.issue({
+        key,
+        fields: {
+          summary,
+          assignee: { name: user },
+          status: {
+            name: "To Do",
+          }
+        }
+      } as any);
+    } else {
+      throw new Error("Issue creation failed");
+    }
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+
+
 program
   .version("0.1.0", "-v, --version")
   .command("ls")
@@ -325,9 +385,14 @@ program
   .action(list);
 
 program
-  .command("add")
+  .command("add [user] [...rest]")
   .description("Add a issue into current sprint")
   .action(add);
+
+program
+  .command("rm [issue]")
+  .description("Delete a issue")
+  .action(remove);
 
 program
   .command("done [issue]")
