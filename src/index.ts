@@ -174,6 +174,21 @@ const printer = {
     const name = assignee ? assignee.name : "      ";
     console.log(key, printer.name(name), printer.status((statusMap as any)[statusKey]), summary);
   },
+  updateIssueSummary: (issue: Issue, newSummary: string) => {
+    const {
+      key,
+      fields: {
+        summary,
+        assignee,
+        status: {
+          name: statusKey,
+        },
+      }
+    } = issue;
+
+    const name = assignee ? assignee.name : "      ";
+    console.log(key, printer.name(name), printer.status((statusMap as any)[statusKey]), `${chalk.gray(summary)} -> ${newSummary}`);
+  },
   status: (s: typeof status[number]) => {
     const color = {
       "todo": "green",
@@ -189,10 +204,44 @@ const printer = {
   },
 };
 
-/*
-(async () => {
-})();
-*/
+const updateIssueSummary = async (args: any) => {
+  const options = args.filter((x: any) => typeof x === "string");
+  if (options.length <= 1) {
+    console.error("need more argument. see --help");
+    process.exit(0);
+  }
+
+  const [id, ...summaries] = options;
+  const summary = summaries.join(" ");
+
+  if (!/^\d+$/.test(id)) {
+    console.error(`
+Usage: jira [issue-id] [summary], where issue id must be number
+
+given: '${chalk.yellow(id)}'
+`);
+    process.exit(0);
+  }
+
+  try {
+    const res = await api.get(`/issue/SB-${id}`);
+    const issue = res.data;
+    await api.put(`/issue/SB-${id}`, {
+      fields: {
+        summary,
+      }
+    });
+    printer.updateIssueSummary(issue, summary);
+    process.exit(0);
+  } catch (e) {
+    if (R.path(["response", "status"], e)) {
+      const { response: res } = e;
+      console.error(res.status, R.path(["data", "errorMessages", "0"], res));
+    } else {
+      console.error(e);
+    }
+  }
+};
 
 const list = async (...args: any) => {
   const options = args.splice(0, args.length - 1);
@@ -222,24 +271,56 @@ const list = async (...args: any) => {
   }
 };
 
+const change = (to: typeof status[number]) => async (...args: any) => {
+  const issueId = args[0];
+  if (!/^\d+$/.test(issueId)) {
+    console.error(`
+Usage: jira ${to} <issue-id>, where issue id must be number
+
+given: '${chalk.yellow(issueId)}'
+`);
+
+    process.exit(0);
+  }
+
+  console.log(issueId);
+};
+
 program
   .version("0.1.0", "-v, --version")
   .command("ls")
   .description("list issues")
   .action(list);
 
+program
+  .command("done [issue]")
+  .description("Set status of the issue 'done'")
+  .action(change("done"));
+
+program
+  .arguments("<id> [summary]")
+  .description("Update issue summary")
+  .action(function(...args) {
+    updateIssueSummary(args);
+  });
+
+program.on("--help", function() {
+  console.log("  [id] [summary] Update summary of issue ");
+  console.log("\n");
+  console.log("Schema:");
+  console.log(`  - users : ${users.join(", ")}`);
+  console.log(`  - status: ${status.join(", ")}`);
+  console.log("\n");
+  console.log("Examples:");
+  console.log("  $ jira --help");
+  console.log("  $ jira ls");
+  console.log("  $ jira ls todo");
+  console.log("  $ jira ls joseph");
+  console.log("  $ jira ls joseph todo");
+  console.log("  $ jira ls karl review done");
+  console.log("  $ jira ls jospeh karl doing review");
+  console.log(`  $ jira 2352 "(1.5h) ..."`);
+  console.log("\n");
+});
 
 program.parse(process.argv);
-
-/* example command
-
-jira ls  -> list all issue
-jira ls todo
-jira ls karl todo done
-jira ls jackie karl todo done
-jira ls
-jira add karl "............"
-jira mv <id> <karl done>
-jira rm <id>
-
-*/
