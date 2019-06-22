@@ -30,7 +30,7 @@
     "ramda": "^0.26.1"
   },
   "bin": {
-    "upbit": "dist/index.js"
+    "jira": "dist/index.js"
   },
   "files": [
     "dist"
