@@ -1,7 +1,7 @@
 {
-  "name": "jira-cli",
+  "name": "@minidonut/jira-cli",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
     "dev": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'ts-node --files' src/index.ts",

@@ -10,6 +10,13 @@ This is a jira cli program for personal use.
   - `JIRA_ENDPOINT` is `https://YOUR_SERVICE.atlassian.net/rest`
 
 ## Usage
+## from npm
+```
+npm -g install @minidonut/jira-cli
+```
+
+
+### For git installation
 ```
 git clone https://github.com/minidonut/jira-cli.git
 cd jira-cli
