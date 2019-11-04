@@ -5,7 +5,7 @@ import * as program from "commander";
 import * as inquirer from "inquirer";
 const chalk = require("chalk");
 
-console.log("JIRA cli -- v1.0.0");
+console.log("JIRA cli -- v1.1.0");
 
 /**
  * Configurable Settings
@@ -58,25 +58,14 @@ const api2 = axios.create({
 /********************************************************************************************************
  * REST API wrapper
  ********************************************************************************************************/
-const getAllSprint = async () => {
-  const res = await api2.get(`board/${SPRINT_BOARD_ID}/sprint`);
+
+const getActiveSprint = async () => {
+  const res = await api2.get(`board/${SPRINT_BOARD_ID}/sprint?state=active`);
   return res.data.values;
 };
 
-const getSprint = async (offset = 0) => {
-  const sprints = await getAllSprint();
-  const targetDate = date.addWeeks(new Date(), offset);
-
-  return R.find(
-    (sprint: Sprint) =>
-      R.propSatisfies((endDate: string) => date.isBefore(targetDate, new Date(endDate)), "endDate")(sprint) &&
-      R.propSatisfies((startDate: string) => date.isAfter(targetDate, new Date(startDate)), "startDate")(sprint),
-    sprints
-  ) as Sprint;
-};
-
-const getIssueBySprint = async (offset = 0, ...args: (typeof users[number] | typeof status[number])[]): Promise<Issue[]> => {
-  const sprint = await getSprint(offset);
+const getIssueBySprint = async (...args: (typeof users[number] | typeof status[number])[]): Promise<Issue[]> => {
+  const sprint = await getActiveSprint();
 
   const assignees = args.filter((x: string) => users.includes(x as any));
   const statuses = args.filter((x: string) => status.includes(x as any));
@@ -244,7 +233,7 @@ const list = async (...args: any) => {
   });
 
   try {
-    const issues = await getIssueBySprint(0, ...options);
+    const issues = await getIssueBySprint(...options);
     issues.forEach(printer.issue);
 
   } catch (e) {
