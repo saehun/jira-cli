@@ -61,7 +61,7 @@ const api2 = axios.create({
 
 const getActiveSprint = async () => {
   const res = await api2.get(`board/${SPRINT_BOARD_ID}/sprint?state=active`);
-  return res.data.values;
+  return res.data.values[0];
 };
 
 const getIssueBySprint = async (...args: (typeof users[number] | typeof status[number])[]): Promise<Issue[]> => {
@@ -317,7 +317,7 @@ const add = async (user: any, ...rest: any) => {
     console.log("Issue is successfully created");
     const key = R.path(["data", "key"], res);
     if (key) {
-      const sprint = await getSprint();
+      const sprint = await getActiveSprint();
       console.log("Set the issue's sprint..", sprint.id);
       await api2.post(`sprint/${sprint.id}/issue`, {
         issues: [key],
