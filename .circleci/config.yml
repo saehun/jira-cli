@@ -1,16 +1,15 @@
 version: 2
 
 defaults: &defaults
-  working_directory: ~/repo
+  working_directory: ~/app
   docker:
-    - image: circleci/node:8.9.1
+    - image: node:11
 
 jobs:
-  test:
+  prepare:
     <<: *defaults
     steps:
       - checkout
-
       - restore_cache:
           keys:
           - v1-dependencies-{{ checksum "package.json" }}
@@ -18,41 +17,71 @@ jobs:
           - v1-dependencies-
 
       - run: npm install
-      - run:
-          name: Run tests
-          command: npm test
-
       - save_cache:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
 
       - persist_to_workspace:
-          root: ~/repo
+          root: ~/app
           paths: .
-  deploy:
+  test:
     <<: *defaults
     steps:
+      - checkout
       - attach_workspace:
-          at: ~/repo
-      - run:
-          name: Authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$npm_TOKEN" > ~/repo/.npmrc
+          at: ~/app
+      - run: npm run test
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/app
+      - run: npm run build
+      - persist_to_workspace:
+          root: ~/app
+          paths:
+            - dist
+  deploy:
+    <<: *defaults
+    dependencies:
+      pre:
+        - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+    steps:
+      - attach_workspace:
+          at: ~/app
       - run:
           name: Publish package
           command: npm publish
 
 workflows:
   version: 2
-  test-deploy:
+  main:
     jobs:
+      - prepare:
+          filters:
+            tags:
+              only: /.*/
+      - build:
+          requires:
+            - prepare
+          filters:
+            tags:
+              only: /.*/
+      - test:
+          requires:
+            - prepare
+          filters:
+            tags:
+              only: /.*/
       - test:
           filters:
             tags:
               only: /^v.*/
       - deploy:
           requires:
-            - test
+            - build
           filters:
             tags:
               only: /^v.*/
