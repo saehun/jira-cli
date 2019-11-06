@@ -4,8 +4,7 @@ import * as date from "date-fns";
 import * as program from "commander";
 import * as inquirer from "inquirer";
 const chalk = require("chalk");
-
-console.log("JIRA cli -- v1.1.0");
+const version = require("../package.json").version;
 
 /**
  * Configurable Settings
@@ -219,6 +218,7 @@ const printer = {
  * jira ls 커맨드
  */
 const list = async (...args: any) => {
+  console.log(args[1]);
   const options = args.splice(0, args.length - 1);
 
   // sanitize arguments
@@ -378,8 +378,9 @@ given: '${chalk.yellow(id)}'
  * CLI entry
  */
 program
-  .version("0.1.0", "-v, --version")
+  .version(version, "-v, --version")
   .command("ls")
+  .option("-j, --json", "Print in json")
   .description("list issues")
   .action(list);
 
