@@ -1,6 +1,7 @@
 import axios from "axios";
 import * as R from "ramda";
 import * as date from "date-fns";
+import { writeSync } from "clipboardy";
 import * as program from "commander";
 import * as inquirer from "inquirer";
 const chalk = require("chalk");
@@ -324,6 +325,7 @@ const add = async (user: any, ...rest: any) => {
     process.exit(0);
   }
   const summary = options.join(" ");
+  const isCopyClipboard = !!rest[rest.length - 1]?.copy;
 
   try {
     const res = await api.post("issue", {
@@ -351,6 +353,7 @@ const add = async (user: any, ...rest: any) => {
       await api2.post(`sprint/${sprint.id}/issue`, {
         issues: [key],
       });
+      if (isCopyClipboard) writeSync((key as string).replace("SB-", ""));
 
       printer.issue({
         key,
@@ -415,6 +418,7 @@ program
 
 program
   .command("add [user] [...rest]")
+  .option("-c, --copy", "Copy sprint key to system clipboard")
   .description("Add a issue into current sprint")
   .action(add);
 
