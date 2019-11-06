@@ -146,6 +146,32 @@ given: '${chalk.yellow(id)}'
  * REST API wrapper end
  */
 
+/**
+ * JSON printer
+ */
+const jsonPrinter = {
+  issues: (issues: Issue[]) => {
+    const refined = issues.reduce((acc, issue) => {
+      const {
+        key,
+        fields: {
+          summary,
+          assignee: {
+            name,
+          },
+          status: {
+            name: statusKey,
+          },
+        }
+      } = issue;
+      return { ...acc, [key.replace("SB-", "")]: { summary, name, statusKey } };
+    }, {});
+
+    console.log(JSON.stringify(refined));
+  },
+};
+
+
 
 /**
  * Pretty printer
@@ -218,7 +244,6 @@ const printer = {
  * jira ls 커맨드
  */
 const list = async (...args: any) => {
-  console.log(args[1]);
   const options = args.splice(0, args.length - 1);
 
   // sanitize arguments
@@ -234,7 +259,11 @@ const list = async (...args: any) => {
 
   try {
     const issues = await getIssueBySprint(...options);
-    issues.forEach(printer.issue);
+    if (args[args.length - 1].json) {
+      jsonPrinter.issues(issues);
+    } else {
+      issues.forEach(printer.issue);
+    }
 
   } catch (e) {
     if (R.path(["response", "status"], e)) {
