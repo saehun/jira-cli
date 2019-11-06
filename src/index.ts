@@ -170,6 +170,14 @@ const jsonPrinter = {
 
     console.log(JSON.stringify(refined));
   },
+  issueSummary: (issue: Issue) => {
+    const {
+      fields: {
+        summary,
+      }
+    } = issue;
+    console.log(summary.replace(/^\[.+\]/, "").trim());
+  }
 };
 
 
@@ -405,6 +413,31 @@ given: '${chalk.yellow(id)}'
   }
 };
 
+/**
+ * jira show <issue-id> 커맨드
+ */
+const show = async (id: any, ...rest: any) => {
+  if (!/^\d+$/.test(id)) {
+    console.error(`
+Usage: jira rm <issue-id>, where issue id must be number
+
+given: '${chalk.yellow(id)}'
+`);
+  }
+
+  const isShowSummaryOnly = !!rest[rest.length - 1]?.summary;
+  try {
+    const issue = await getIssue(id);
+    if (isShowSummaryOnly) {
+      jsonPrinter.issueSummary(issue);
+    } else {
+      printer.issue(issue);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 
 /**
  * CLI entry
@@ -451,6 +484,12 @@ program
   .command("todo [issue]")
   .description("Set status of the issue 'todo'")
   .action(change("todo"));
+
+program
+  .command("show [issue]")
+  .option("-s, --summary", "Print summary only")
+  .description("Print status of the issue")
+  .action(show);
 
 program
   .arguments("<id> [summary]")
