@@ -437,6 +437,7 @@ Usage: jira rm <issue-id>, where issue id must be number
 
 given: '${chalk.yellow(id)}'
 `);
+    return;
   }
 
   const isShowSummaryOnly = !!rest[rest.length - 1]?.summary;
@@ -448,7 +449,7 @@ given: '${chalk.yellow(id)}'
       printer.issue(issue);
     }
   } catch (e) {
-    console.log(e);
+    console.log(404);
   }
 };
 
