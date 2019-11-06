@@ -1,6 +1,7 @@
 import axios from "axios";
 import * as R from "ramda";
 import * as date from "date-fns";
+import * as execa from "execa";
 import { writeSync } from "clipboardy";
 import * as program from "commander";
 import * as inquirer from "inquirer";
@@ -334,6 +335,7 @@ const add = async (user: any, ...rest: any) => {
   }
   const summary = options.join(" ");
   const isCopyClipboard = !!rest[rest.length - 1]?.copy;
+  const isGitCheckout = !!rest[rest.length - 1]?.branch;
 
   try {
     const res = await api.post("issue", {
@@ -361,7 +363,8 @@ const add = async (user: any, ...rest: any) => {
       await api2.post(`sprint/${sprint.id}/issue`, {
         issues: [key],
       });
-      if (isCopyClipboard) writeSync((key as string).replace("SB-", ""));
+      const keyCode = (key as string).replace("SB-", "");
+      if (isCopyClipboard) writeSync(keyCode);
 
       printer.issue({
         key,
@@ -373,6 +376,17 @@ const add = async (user: any, ...rest: any) => {
           }
         }
       } as any);
+
+      if (isGitCheckout) {
+        console.log("git checkout -b", keyCode);
+        try {
+          await execa("git", ["checkout", "-b", String(keyCode)]);
+          console.log("...done");
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
     } else {
       throw new Error("Issue creation failed");
     }
@@ -452,6 +466,7 @@ program
 program
   .command("add [user] [...rest]")
   .option("-c, --copy", "Copy sprint key to system clipboard")
+  .option("-b, --branch", "Checkout git branch of issue-key at current directory")
   .description("Add a issue into current sprint")
   .action(add);
 
