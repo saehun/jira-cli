@@ -398,7 +398,7 @@ const add = async (user: any, ...rest: any) => {
 /**
  * jira rm <issue-id> 커맨드
  */
-const remove = async (id: any) => {
+const remove = async (id: any, ...rest: any) => {
   if (!/^\d+$/.test(id)) {
     console.error(`
 Usage: jira rm <issue-id>, where issue id must be number
@@ -408,20 +408,24 @@ given: '${chalk.yellow(id)}'
   }
   try {
     const issue = await getIssue(id);
+    const isSayYes = !!rest[rest.length - 1]?.yes;
 
     printer.issue(issue);
-    inquirer.prompt({
-      type: "confirm",
-      message: `Delete SB-${id}`,
-      name: "yes"
-    }).then(async ({ yes }: any) => {
-      if (yes) {
-        await api.delete(`issue/SB-${id}`);
-      } else {
-        console.log("Bye..");
-      }
-    });
-
+    if (isSayYes) {
+      await api.delete(`issue/SB-${id}`);
+    } else {
+      inquirer.prompt({
+        type: "confirm",
+        message: `Delete SB-${id}`,
+        name: "yes"
+      }).then(async ({ yes }: any) => {
+        if (yes) {
+          await api.delete(`issue/SB-${id}`);
+        } else {
+          console.log("Bye..");
+        }
+      });
+    }
   } catch (e) {
     console.log(e);
   }
@@ -473,6 +477,7 @@ program
 
 program
   .command("rm [issue]")
+  .option("-y, --yes", "Don't ask removal prompt")
   .description("Delete a issue")
   .action(remove);
 
