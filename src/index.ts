@@ -32,6 +32,7 @@ const STATUS_PAD = 6;
 const statusMap = <const>{
   "To Do": "todo",
   "In Progress": "doing",
+  "진행 중": "doing",
   "대기": "wait",
   "리뷰": "review",
   "Done": "done"
